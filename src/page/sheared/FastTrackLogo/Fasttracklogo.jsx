@@ -3,9 +3,9 @@ import logo from '../../../assets/logo.png'
 
 function Fasttracklogo() {
   return (
-    <div>
+    <div className='flex justify-center items-center'>
         <img src={logo} alt="" />
-        <p>FastTrack</p>
+        <p className='font-semibold text-2xl -ml-2 pt-4'>FastTrack</p>
     </div>
   )
 }
