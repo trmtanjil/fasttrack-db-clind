@@ -8,7 +8,7 @@ const PrivetRoute = ({children}) => {
 
 
  if(loading){
-  return <P>loading.....</P>
+  return <p>loading.....</p>
  }
  if(!user){
   <Navigate to='/login' state={location.pathname} replace ></Navigate>

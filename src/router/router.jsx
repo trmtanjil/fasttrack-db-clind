@@ -6,6 +6,8 @@ import AthenticationLayOut from "../layout/AthenticationLayOut";
 import Login from "../page/home/Home/Authentication/Login/Login";
 import RegisterForm from "../page/home/Home/Authentication/Register/RegisterForm";
 import Coverage from "../page/Coverage/Coverage";
+import PrivetRoute from "../routes/PrivetRoute";
+import SendParcel from "../page/SendParcel/SendParcel";
 
 export const router = createBrowserRouter([
   {
@@ -21,6 +23,12 @@ export const router = createBrowserRouter([
           Component:Coverage,
           loader:()=>fetch('./serviceCenter.json')
         },
+        {
+          path:'sendparcel',
+          element:<PrivetRoute><SendParcel></SendParcel></PrivetRoute>,
+          loader:()=>fetch('./serviceCenter.json')
+
+        }
     ]
  },
  //authentication router setup
