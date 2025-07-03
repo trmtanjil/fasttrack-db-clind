@@ -1,5 +1,6 @@
 import React from "react";
-import { Outlet } from "react-router";
+import { NavLink, Outlet } from "react-router";
+import Fasttracklogo from "../page/sheared/FastTrackLogo/Fasttracklogo";
 
 const DeshBoardLayOut = () => {
   return (
@@ -44,11 +45,12 @@ const DeshBoardLayOut = () => {
         ></label>
         <ul className="menu bg-base-200 text-base-content min-h-full w-80 p-4">
           {/* Sidebar content here */}
+          <Fasttracklogo></Fasttracklogo>
           <li>
-            <a>Sidebar Item 1</a>
+            <a>Home</a>
           </li>
           <li>
-            <a>Sidebar Item 2</a>
+           <NavLink to='/deshboard/myparchels'>My Parchel</NavLink>
           </li>
         </ul>
       </div>

@@ -3,19 +3,52 @@ import useAuth from '../../../hoocks/useAuth';
 import useAxiosSecure from '../../../hoocks/useAxiosSecure';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
+import Swal from 'sweetalert2';
 
 function MyParcels() {
 
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
 
-  const { data: parcels = [], isLoading } = useQuery({
+  const { data: parcels = [], isLoading, refetch } = useQuery({
     queryKey: ['my-parcels', user.email],
     queryFn: async () => {
       const res = await axiosSecure.get(`/parcels?email=${user.email}`);
       return res.data;
     }
   });
+
+  const handleDelete = (id) => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "Do you really want to delete this parcel?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axiosSecure.delete(`/parcels/${id}`)
+          .then(res => {
+              if (res.data.deletedCount > 0) {
+                  Swal.fire(
+                      'Deleted!',
+                      'Parcel has been deleted successfully.',
+                      'success'
+                    );
+                    console.log(res.data)
+              refetch();
+            }
+          })
+          .catch(err => {
+            Swal.fire('Error!', 'Failed to delete parcel.', 'error');
+            console.error(err);
+          });
+      }
+    });
+  };
 
   if (isLoading) return <div className="text-center py-10">Loading...</div>;
 
@@ -28,6 +61,7 @@ function MyParcels() {
           <thead className="bg-gray-100 text-gray-700">
             <tr>
               <th>#</th>
+              <th>Title</th>
               <th>Type</th>
               <th>Created At</th>
               <th>Cost (৳)</th>
@@ -39,6 +73,11 @@ function MyParcels() {
             {parcels.map((parcel, index) => (
               <tr key={parcel._id}>
                 <td>{index + 1}</td>
+                <td>
+                  <div className="tooltip" data-tip={parcel.title}>
+                    <span className="inline-block max-w-[120px] truncate">{parcel.title}</span>
+                  </div>
+                </td>
                 <td className="capitalize">{parcel.type}</td>
                 <td>{new Date(parcel.creation_date).toLocaleDateString()}</td>
                 <td>৳ {parcel.cost}</td>
@@ -50,7 +89,9 @@ function MyParcels() {
                 <td className="flex flex-wrap gap-2">
                   <Link to={`/parcel-details/${parcel._id}`} className="btn btn-xs btn-info">View</Link>
                   <Link to={`/payment/${parcel._id}`} className="btn btn-xs btn-success">Pay</Link>
-                  <button className="btn btn-xs btn-error">Delete</button>
+                 <Link>
+                  <button onClick={() => handleDelete(parcel?._id)} className="btn btn-xs btn-error">Delete</button>
+                 </Link>
                 </td>
               </tr>
             ))}
