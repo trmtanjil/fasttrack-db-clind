@@ -10,6 +10,7 @@ import PrivetRoute from "../routes/PrivetRoute";
 import SendParcel from "../page/SendParcel/SendParcel";
 import DeshBoardLayOut from "../layout/DeshBoardLayOut";
 import MyParchels from "../page/DesgBoard/MyParchels/MyParchels";
+import Payment from "../page/DesgBoard/Payment/Payment";
 
 export const router = createBrowserRouter([
   {
@@ -57,6 +58,10 @@ export const router = createBrowserRouter([
   children:[
    { path:'myparchels',
     Component:MyParchels,
+  },
+  {
+    path:'payment/:id',
+    Component:Payment,
   },
   ]
  },

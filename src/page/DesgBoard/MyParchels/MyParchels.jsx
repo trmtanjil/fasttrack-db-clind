@@ -2,13 +2,14 @@ import React from 'react';
 import useAuth from '../../../hoocks/useAuth';
 import useAxiosSecure from '../../../hoocks/useAxiosSecure';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import Swal from 'sweetalert2';
 
 function MyParcels() {
 
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
+  const navigate = useNavigate()
 
   const { data: parcels = [], isLoading, refetch } = useQuery({
     queryKey: ['my-parcels', user.email],
@@ -52,6 +53,13 @@ function MyParcels() {
 
   if (isLoading) return <div className="text-center py-10">Loading...</div>;
 
+
+  //handle payment parchel 
+  const handlePay = (id)=>{
+    navigate(`/deshboard/payment/${id}`)
+  }
+
+
   return (
     <div className="p-5">
       <h2 className="text-2xl font-bold mb-4">📦 My Parcels ({parcels.length})</h2>
@@ -88,7 +96,11 @@ function MyParcels() {
                 </td>
                 <td className="flex flex-wrap gap-2">
                   <Link to={`/parcel-details/${parcel._id}`} className="btn btn-xs btn-info">View</Link>
-                  <Link to={`/payment/${parcel._id}`} className="btn btn-xs btn-success">Pay</Link>
+
+                  {/* //parchel pay link */}
+                  <Link onClick={()=>handlePay(parcel._id)}   className="btn btn-xs btn-success">Pay</Link>
+
+
                  <Link>
                   <button onClick={() => handleDelete(parcel?._id)} className="btn btn-xs btn-error">Delete</button>
                  </Link>
