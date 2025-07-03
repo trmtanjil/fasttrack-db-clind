@@ -60,7 +60,7 @@ export const router = createBrowserRouter([
     Component:MyParchels,
   },
   {
-    path:'payment/:id',
+    path:'payment/:parchelId',
     Component:Payment,
   },
   ]
