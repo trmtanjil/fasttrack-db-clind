@@ -1,83 +1,136 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import Swal from "sweetalert2"; // SweetAlert2 import
+import Swal from "sweetalert2";
 import useAuth from "../../hoocks/useAuth";
-import { useLoaderData } from "react-router";
+import { useLoaderData,  } from "react-router";
+import useAxiosSecure from "../../hoocks/useAxiosSecure";
+
+
+const generateTrackingId = () => {
+  const prefix = 'plc';
+
+  const now = new Date();
+  const year = now.getFullYear(); // 2025
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // 03
+  const day = String(now.getDate()).padStart(2, '0'); // 08
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let randomPart = '';
+  for (let i = 0; i < 3; i++) {
+    randomPart += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return `${prefix}-${year}${month}-${day}${randomPart}`; 
+};
+
+
 
 function SendParcel() {
-  const warehouseData = useLoaderData(); // warehouse data with region & covered_area
+  const warehouseData = useLoaderData();
   const { user } = useAuth();
+  const axiosSecure =useAxiosSecure()
+  // const navigate = useNavigate();
 
   const [cost, setCost] = useState(0);
   const [submittedData, setSubmittedData] = useState(null);
   const [senderRegion, setSenderRegion] = useState("");
   const [receiverRegion, setReceiverRegion] = useState("");
 
+  console.log(cost,submittedData)
   const {
     register,
     handleSubmit,
     watch,
-    formState: { errors }
+    formState: { errors },
   } = useForm();
 
   const watchType = watch("type");
 
   const isWithinCity = senderRegion && receiverRegion && senderRegion === receiverRegion;
 
-  const calculateCost = (type, weight = 0, withinCity = true) => {
+  const calculateBreakdown = (type, weight = 0, withinCity = true) => {
+    let base = 0;
+    let extraWeight = 0;
+    let extraOutCity = 0;
+
     if (type === "document") {
-      return withinCity ? 60 : 80;
+      base = withinCity ? 60 : 80;
     } else {
       if (weight <= 3) {
-        return withinCity ? 110 : 150;
+        base = withinCity ? 110 : 150;
       } else {
-        const extraWeight = weight - 3;
-        return withinCity
-          ? 110 + extraWeight * 40
-          : 150 + extraWeight * 40 + 40;
+        const over = weight - 3;
+        extraWeight = over * 40;
+        base = withinCity ? 110 : 150;
+        if (!withinCity) extraOutCity = 40;
       }
     }
+
+    const total = base + extraWeight + extraOutCity;
+    return { base, extraWeight, extraOutCity, total };
   };
 
   const onSubmit = (data) => {
-    const deliveryCost = calculateCost(
-      data.type,
-      Number(data.weight || 0),
-      isWithinCity
-    );
-    setCost(deliveryCost);
-    setSubmittedData({
-      ...data,
-      creation_date: new Date().toISOString(),
-      cost: deliveryCost
-    });
+  const weight = Number(data.weight || 0);
+  const { base, extraWeight, extraOutCity, total } = calculateBreakdown(
+    data.type,
+    weight,
+    isWithinCity
+  );
 
-    // Show SweetAlert with pricing breakdown
-    Swal.fire({
-      title: 'Confirm Delivery Cost',
-      html: `
-        <p><strong>Parcel Type:</strong> ${data.type}</p>
-        <p><strong>Weight:</strong> ${data.weight || 0} kg</p>
-        <p><strong>Delivery Area:</strong> ${isWithinCity ? 'Within City' : 'Outside City/District'}</p>
-        <hr/>
-        <h3>Estimated Cost: ৳${deliveryCost}</h3>
-      `,
-      icon: 'info',
-      showCancelButton: true,
-      confirmButtonText: 'OK',
-      cancelButtonText: 'Cancel',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        Swal.fire(
-          'Success!',
-          'Parcel information saved successfully!',
-          'success'
-        );
-        // এখানে তুমি ডাটা সেভ বা অন্য যেকোনো কাজ করতে পারো
-        console.log("Saving Parcel Data:", submittedData);
-      }
-    });
+  setCost(total);
+  const parcelData = {
+    ...data,
+    created_by: user.email,
+    delivery_status: 'not_collected',
+    payment_status: 'unpaid',
+    creation_date: new Date().toISOString(),
+    tracking_Id: generateTrackingId(),
+    cost: total,
   };
+
+  setSubmittedData(parcelData);
+
+  Swal.fire({
+    title: "Confirm Parcel Details",
+    html: `
+      <div style="text-align:left">
+        <p><strong>Parcel Type:</strong> ${data.type}</p>
+        <p><strong>Weight:</strong> ${weight} kg</p>
+        <p><strong>Delivery Area:</strong> ${isWithinCity ? "Within City" : "Outside City"}</p>
+        <hr/>
+        <p><strong>Base Charge:</strong> ৳${base}</p>
+        <p><strong>Extra Weight:</strong> ৳${extraWeight}</p>
+        <p><strong>Outside City Extra:</strong> ৳${extraOutCity}</p>
+        <hr/>
+        <h3><strong>Total Cost:</strong> ৳${total}</h3>
+      </div>
+    `,
+    icon: "info",
+    showCancelButton: true,
+    confirmButtonText: "✅ Confirm & Payment",
+    cancelButtonText: "✏️ Edit Info",
+    reverseButtons: true,
+  }).then((result) => {
+    if (result.isConfirmed) {
+      Swal.fire("Success!", "Parcel information saved successfully!", "success");
+      console.log("Saving Parcel Data:", parcelData);
+
+      // Save parcel data to the server
+      axiosSecure.post('/parcels', parcelData)
+        .then(res => {
+          console.log(res.data);
+          if (res.data.insertedId) {
+            // Redirect to payment page with insertedId
+            // navigate(`/payment/${res.data.insertedId}`);
+          }
+        })
+        .catch(error => {
+          console.error("Error saving parcel:", error);
+          Swal.fire("Error!", "Failed to save parcel data.", "error");
+        });
+    }
+  });
+};
+
 
   const uniqueRegions = [...new Set(warehouseData.map((item) => item.region))];
 
@@ -87,13 +140,9 @@ function SendParcel() {
       <p className="text-gray-600 mb-6">Please fill out the following details</p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-
-        {/* --- Parcel Info --- */}
         <div className="border p-4 rounded-lg">
           <h3 className="font-semibold mb-4 text-lg">Parcel Info</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-            {/* Title */}
             <div className="md:col-span-3">
               <label className="label">Parcel Title</label>
               <input
@@ -101,115 +150,65 @@ function SendParcel() {
                 className="input input-bordered w-full"
                 placeholder="Parcel Title"
               />
-              {errors.title && (
-                <p className="text-error text-sm mt-1">Title is required</p>
-              )}
+              {errors.title && <p className="text-error text-sm">Title is required</p>}
             </div>
 
-            {/* Type (radio) */}
             <div className="md:col-span-3">
               <label className="label">Parcel Type</label>
               <div className="flex gap-6">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    value="document"
-                    {...register("type", { required: true })}
-                    className="radio radio-primary"
-                  />
-                  Document
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    value="non-document"
-                    {...register("type", { required: true })}
-                    className="radio radio-primary"
-                  />
-                  Non-Document
-                </label>
+                {['document', 'non-document'].map((type) => (
+                  <label key={type} className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      value={type}
+                      {...register("type", { required: true })}
+                      className="radio radio-primary"
+                    />
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </label>
+                ))}
               </div>
-              {errors.type && (
-                <p className="text-error text-sm mt-1">Parcel type is required</p>
-              )}
+              {errors.type && <p className="text-error text-sm">Type is required</p>}
             </div>
 
-            {/* Weight */}
             {watchType === "non-document" && (
               <div className="md:col-span-3">
                 <label className="label">Weight (kg)</label>
                 <input
-                  {...register("weight", { required: watchType === "non-document" })}
+                  {...register("weight", { required: true })}
                   type="number"
                   step="0.1"
                   min="0"
                   className="input input-bordered w-full"
                   placeholder="Weight"
                 />
-                {errors.weight && (
-                  <p className="text-error text-sm mt-1">Weight is required for Non-Document</p>
-                )}
+                {errors.weight && <p className="text-error text-sm">Weight required</p>}
               </div>
             )}
           </div>
         </div>
 
-        {/* --- Sender & Receiver --- */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
           {/* Sender Info */}
           <div className="border p-4 rounded-lg">
             <h3 className="font-semibold mb-4 text-lg">Sender Info</h3>
             <div className="grid grid-cols-1 gap-4">
-              <input
-                defaultValue={user?.displayName || ""}
-                className="input input-bordered w-full"
-                readOnly
-              />
-              <input
-                {...register("sender_contact", { required: true })}
-                className="input input-bordered w-full"
-                placeholder="Sender Contact"
-              />
-
-              <select
-                {...register("sender_region", { required: true })}
-                onChange={(e) => setSenderRegion(e.target.value)}
-                className="select select-bordered w-full"
-              >
+              <input defaultValue={user?.displayName || ""} className="input input-bordered w-full" readOnly />
+              <input {...register("sender_contact", { required: true })} className="input input-bordered w-full" placeholder="Sender Contact" />
+              <select {...register("sender_region", { required: true })} onChange={(e) => setSenderRegion(e.target.value)} className="select select-bordered w-full">
                 <option value="">Select Region</option>
                 {uniqueRegions.map((region, idx) => (
-                  <option key={idx} value={region}>
-                    {region}
-                  </option>
+                  <option key={idx} value={region}>{region}</option>
                 ))}
               </select>
-
-              <select
-                {...register("sender_center", { required: true })}
-                className="select select-bordered w-full"
-              >
+              <select {...register("sender_center", { required: true })} className="select select-bordered w-full">
                 <option value="">Select Service Center</option>
-                {warehouseData
-                  .find((item) => item.region === senderRegion)
-                  ?.covered_area.map((center, idx) => (
-                    <option key={idx} value={center}>
-                      {center}
-                    </option>
-                  ))}
+                {warehouseData.find((item) => item.region === senderRegion)?.covered_area.map((center, idx) => (
+                  <option key={idx} value={center}>{center}</option>
+                ))}
               </select>
-
-              <input
-                {...register("sender_address", { required: true })}
-                className="input input-bordered w-full"
-                placeholder="Sender Address"
-              />
-
-              <textarea
-                {...register("sender_instruction")}
-                className="textarea textarea-bordered w-full"
-                placeholder="Pickup Instructions (optional)"
-              />
+              <input {...register("sender_address", { required: true })} className="input input-bordered w-full" placeholder="Sender Address" />
+              <textarea {...register("sender_instruction")} className="textarea textarea-bordered w-full" placeholder="Pickup Instructions (optional)" />
             </div>
           </div>
 
@@ -217,60 +216,26 @@ function SendParcel() {
           <div className="border p-4 rounded-lg">
             <h3 className="font-semibold mb-4 text-lg">Receiver Info</h3>
             <div className="grid grid-cols-1 gap-4">
-              <input
-                {...register("receiver_name", { required: true })}
-                className="input input-bordered w-full"
-                placeholder="Receiver Name"
-              />
-              <input
-                {...register("receiver_contact", { required: true })}
-                className="input input-bordered w-full"
-                placeholder="Receiver Contact"
-              />
-
-              <select
-                {...register("receiver_region", { required: true })}
-                onChange={(e) => setReceiverRegion(e.target.value)}
-                className="select select-bordered w-full"
-              >
+              <input {...register("receiver_name", { required: true })} className="input input-bordered w-full" placeholder="Receiver Name" />
+              <input {...register("receiver_contact", { required: true })} className="input input-bordered w-full" placeholder="Receiver Contact" />
+              <select {...register("receiver_region", { required: true })} onChange={(e) => setReceiverRegion(e.target.value)} className="select select-bordered w-full">
                 <option value="">Select Region</option>
                 {uniqueRegions.map((region, idx) => (
-                  <option key={idx} value={region}>
-                    {region}
-                  </option>
+                  <option key={idx} value={region}>{region}</option>
                 ))}
               </select>
-
-              <select
-                {...register("receiver_center", { required: true })}
-                className="select select-bordered w-full"
-              >
+              <select {...register("receiver_center", { required: true })} className="select select-bordered w-full">
                 <option value="">Select Service Center</option>
-                {warehouseData
-                  .find((item) => item.region === receiverRegion)
-                  ?.covered_area.map((center, idx) => (
-                    <option key={idx} value={center}>
-                      {center}
-                    </option>
-                  ))}
+                {warehouseData.find((item) => item.region === receiverRegion)?.covered_area.map((center, idx) => (
+                  <option key={idx} value={center}>{center}</option>
+                ))}
               </select>
-
-              <input
-                {...register("receiver_address", { required: true })}
-                className="input input-bordered w-full"
-                placeholder="Receiver Address"
-              />
-
-              <textarea
-                {...register("receiver_instruction")}
-                className="textarea textarea-bordered w-full"
-                placeholder="Delivery Instructions (optional)"
-              />
+              <input {...register("receiver_address", { required: true })} className="input input-bordered w-full" placeholder="Receiver Address" />
+              <textarea {...register("receiver_instruction")} className="textarea textarea-bordered w-full" placeholder="Delivery Instructions (optional)" />
             </div>
           </div>
         </div>
 
-        {/* Submit Button */}
         <button type="submit" className="btn btn-primary w-full mt-6">
           Submit
         </button>

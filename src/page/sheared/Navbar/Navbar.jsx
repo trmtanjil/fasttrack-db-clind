@@ -2,8 +2,10 @@ import React from "react";
 import { NavLink } from "react-router";
 import Fasttracklogo from "../FastTrackLogo/Fasttracklogo";
 import Logout from "../../home/Home/Authentication/Logout";
+import useAuth from "../../../hoocks/useAuth";
 
 function Navbar() {
+  const {user} =useAuth()
   const navbarItems = (
     <>
       <li>
@@ -15,6 +17,13 @@ function Navbar() {
       <li>
         <NavLink to="/sendparcel">Send a Parcel</NavLink>
       </li>
+      {
+        user && <>
+        <li>
+        <NavLink to="/deshboard">DeshBoard</NavLink>
+      </li>
+        </>
+      }
     </>
   );
 

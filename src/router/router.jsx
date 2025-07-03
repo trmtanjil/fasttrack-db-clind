@@ -8,6 +8,8 @@ import RegisterForm from "../page/home/Home/Authentication/Register/RegisterForm
 import Coverage from "../page/Coverage/Coverage";
 import PrivetRoute from "../routes/PrivetRoute";
 import SendParcel from "../page/SendParcel/SendParcel";
+import DeshBoardLayOut from "../layout/DeshBoardLayOut";
+import MyParchels from "../page/DesgBoard/MyParchels/MyParchels";
 
 export const router = createBrowserRouter([
   {
@@ -44,6 +46,18 @@ export const router = createBrowserRouter([
       path:'register',
       Component:RegisterForm,
     },
+  ]
+ },
+ //deshbosar routs
+ {
+  path:'/deshboard',
+  element:<PrivetRoute>
+    <DeshBoardLayOut></DeshBoardLayOut>
+  </PrivetRoute>,
+  children:[
+   { path:'myparchels',
+    Component:MyParchels,
+  },
   ]
  },
 ]);
