@@ -52,6 +52,9 @@ const DeshBoardLayOut = () => {
           <li>
            <NavLink to='/deshboard/myparchels'>My Parchel</NavLink>
           </li>
+            <li>
+        <NavLink to="/deshboard/paymenthistory">Payments History</NavLink>
+      </li>
         </ul>
       </div>
     </div>
