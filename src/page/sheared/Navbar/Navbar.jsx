@@ -17,6 +17,9 @@ function Navbar() {
       <li>
         <NavLink to="/sendparcel">Send a Parcel</NavLink>
       </li>
+      <li>
+        <NavLink to="/beARider">Be A Rider</NavLink>
+      </li>
       {
         user && <>
         <li>

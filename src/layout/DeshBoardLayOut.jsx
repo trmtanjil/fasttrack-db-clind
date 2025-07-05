@@ -1,6 +1,8 @@
 import React from "react";
-import { NavLink, Outlet } from "react-router";
+import { NavLink, Outlet,  } from "react-router";
 import Fasttracklogo from "../page/sheared/FastTrackLogo/Fasttracklogo";
+ 
+import { Clock, CreditCard, Home, Package, User } from "lucide-react";
 
 const DeshBoardLayOut = () => {
   return (
@@ -31,10 +33,9 @@ const DeshBoardLayOut = () => {
             </label>
           </div>
           <div className="mx-2 flex-1 px-2 lg:hidden">DeshBoard</div>
-         
         </div>
         {/* Page content here */}
-       <Outlet></Outlet>
+        <Outlet></Outlet>
         {/* Page content here */}
       </div>
       <div className="drawer-side">
@@ -47,14 +48,35 @@ const DeshBoardLayOut = () => {
           {/* Sidebar content here */}
           <Fasttracklogo></Fasttracklogo>
           <li>
-            <a>Home</a>
+            <NavLink to="/">
+              <Home className="inline-block mr-2" size={18} /> Home
+            </NavLink>
           </li>
+
           <li>
-           <NavLink to='/deshboard/myparchels'>My Parchel</NavLink>
+            <NavLink to="/deshboard/myparchels">
+              <Package className="inline-block mr-2" size={18} /> My Parcel
+            </NavLink>
           </li>
-            <li>
-        <NavLink to="/deshboard/paymenthistory">Payments History</NavLink>
-      </li>
+
+          <li>
+            <NavLink to="/deshboard/paymenthistory">
+              <CreditCard className="inline-block mr-2" size={18} /> Payments
+              History
+            </NavLink>
+          </li>
+
+          <li>
+            <NavLink to="/deshboard/activeriders">
+              <User className="inline-block mr-2" size={18} /> Active Riders
+            </NavLink>
+          </li>
+
+          <li>
+            <NavLink to="/deshboard/pendingriders">
+              <Clock className="inline-block mr-2" size={18} /> Pending Riders
+            </NavLink>
+          </li>
         </ul>
       </div>
     </div>

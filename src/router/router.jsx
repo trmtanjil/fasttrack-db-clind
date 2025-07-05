@@ -12,6 +12,8 @@ import DeshBoardLayOut from "../layout/DeshBoardLayOut";
 import MyParchels from "../page/DesgBoard/MyParchels/MyParchels";
 import Payment from "../page/DesgBoard/Payment/Payment";
 import PaymentHistry from "../page/DesgBoard/PaymentHistry/PaymentHistry";
+import BeARider from "../page/DesgBoard/BeARider/BeARider";
+import RidersPanding from "../page/DesgBoard/RiderPanding/RidersPanding";
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +34,11 @@ export const router = createBrowserRouter([
           element:<PrivetRoute><SendParcel></SendParcel></PrivetRoute>,
           loader:()=>fetch('./serviceCenter.json')
 
+        },
+        {
+          path:'beARider',
+          element:<PrivetRoute><BeARider></BeARider></PrivetRoute>,
+          loader:()=>fetch('./serviceCenter.json')
         }
     ]
  },
@@ -67,7 +74,12 @@ export const router = createBrowserRouter([
   {
     path:'paymenthistory',
     Component:PaymentHistry,
+  },
+  {
+    path:'pendingriders',
+    Component:RidersPanding
   }
+  
   ]
  },
 ]);

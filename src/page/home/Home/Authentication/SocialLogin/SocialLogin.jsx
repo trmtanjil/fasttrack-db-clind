@@ -2,9 +2,11 @@ import React from 'react'
 import { FcGoogle } from 'react-icons/fc'
 import useAuth from '../../../../../hoocks/useAuth'
 import { useLocation, useNavigate } from 'react-router'
+import useAxios from '../../../../../hoocks/useAxios'
 
 function SocialLogin() {
   const location = useLocation()
+  const axiosInstance = useAxios()
   const navigate =useNavigate()
   const from = location.state?.from || '/';
 
@@ -12,8 +14,24 @@ function SocialLogin() {
 
     const handleGoogleSignIn=()=>{
         signInWithGoogle()
-        .then(result=>{
+        .then(async(result)=>{
+          const user = result.user
             console.log(result.user)
+
+          //update userinfo in the database
+
+      const userInfo = {
+        email: user.email,
+        role: 'user',
+        created_at : new Date().toISOString(),
+        last_log_in:new Date().toISOString()
+      }
+
+       const Res = await axiosInstance.post('/users', userInfo);
+      console.log('user update info in social ', Res.data)
+
+
+
             navigate(from)
         })
         .catch(error=>{

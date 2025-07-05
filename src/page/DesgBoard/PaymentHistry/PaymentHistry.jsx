@@ -10,7 +10,7 @@ function PaymentHistry() {
     const axiosSecure = useAxiosSecure()
 
     const {ispanding, data: payments=[]}=useQuery({
-        queryKey:('payments',user.email),
+          queryKey: ['payments', user.email],  // ✅ Array
         queryFn:async ()=>{
             const res = await axiosSecure.get(`/payments?email=${user.email}`)
             return res.data

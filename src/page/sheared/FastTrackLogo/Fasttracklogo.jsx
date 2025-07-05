@@ -5,10 +5,10 @@ import { Link } from 'react-router'
 function Fasttracklogo() {
   return (
        <Link to='/'>
-    <div className='flex  items-center'>
+    <span className='flex  items-center'>
         <img src={logo} alt="" />
-        <p className='font-semibold text-2xl -ml-2 pt-4'>FastTrack</p>
-    </div>
+        <span className='font-semibold text-2xl -ml-2 pt-4'>FastTrack</span>
+    </span>
        </Link>
   )
 }
